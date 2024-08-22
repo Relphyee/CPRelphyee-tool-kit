@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PK Simulation and Parameters Estimate</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      text-align: center;
+      padding: 200px;
+    }
+
+    h2 {
+      color: #2c3e50;
+      font-size: 40px;
+      margin-bottom: 40px;
+    }
+
+    .module-button {
+      display: inline-block;
+      width: 500px;
+      height: 250px;
+      margin: 20px;
+      padding: 20px;
+      color: rgb(21, 23, 131);
+      font-size: 18px;
+      font-weight: bold;
+      border-radius: 30px;
+      background-size: cover;
+      background-position: center;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .module-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0px 8px 15px rgba(105, 16, 16, 0.2);
+    }
+    .logo {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 100px;
+      height: auto;
+    }
+    .info {
+      position: absolute;
+      top: 20px;
+      left: 130px;
+      font-size: 18px;
+      text-align: left;
+      line-height: 1.5;
+    }
+   </style>
+</head>
+<body>
+  <img src="CPRelphyee.jpg" alt="Logo" class="logo">
+  <div class="info">
+    <p><strong>公众号：</strong>CP Relphyee</p>
+    <p><strong>联系方式：</strong>QQ 1003062817</p>
+  </div>
+  
+  <h2>Choose the module you need</h2>
+  <button onclick="openPKModelPage()">PK Compartment Model Simulation and Graph</button>
+  <button onclick="openNonPKModelPage()">PK Non-Compartment Model Parameters Estimation</button>
+
+  <script>
+    function openPKModelPage() {
+      window.open("compartmentmodelSG.html", "_blank"); // 打开PK Model计算页面
+    }
+
+    function openNonPKModelPage() {
+      window.open("NCAparameterestimate.html", "_blank"); // 打开非PK Model计算页面
+    }
+  </script>
+</body>
+</html>

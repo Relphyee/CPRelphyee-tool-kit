@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NCA PK Parameter Estimate</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+        .output {
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>NCA PK Parameter Estimate</h2>
+        <form id="upload-form" enctype="multipart/form-data">
+            <label for="file">Upload Excel File:</label>
+            <input type="file" id="file" name="file" accept=".xlsx, .xls">
+            <button type="button" onclick="uploadFile()">Upload and Calculate</button>
+        </form>
+
+        <div class="output">
+            <h3>Results</h3>
+            <div id="result-table"></div>
+        </div>
+    </div>
+
+    <!-- Include xlsx.js and math.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.6.4/math.min.js"></script>
+
+    <script>
+        function uploadFile() {
+            const fileInput = document.getElementById("file");
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+                processExcelData(jsonData);
+            };
+
+            if (file) {
+                reader.readAsArrayBuffer(file);
+            } else {
+                alert("Please upload a file.");
+            }
+        }
+
+        function processExcelData(data) {
+            const headers = data[0].map(header => header.toString().toLowerCase().trim());
+            const content = data.slice(1);
+
+            const subjectIdx = headers.indexOf(headers.find(h => h.includes('subject')));
+            const timeIdx = headers.indexOf(headers.find(h => h.includes('time')));
+            const doseIdx = headers.indexOf(headers.find(h => h.includes('dose')));
+            const concentrationIdx = headers.indexOf(headers.find(h => h.includes('concentration')));
+
+            if (subjectIdx === -1 || timeIdx === -1 || doseIdx === -1 || concentrationIdx === -1) {
+                alert("The uploaded file is missing required columns (subject, time, dose, concentration).");
+                return;
+            }
+
+            const results = {};
+
+            // Group data by subject
+            content.forEach(row => {
+                const subject = row[subjectIdx];
+                const time = parseFloat(row[timeIdx]);
+                const dose = parseFloat(row[doseIdx]);
+                const concentration = parseFloat(row[concentrationIdx]);
+
+                if (!results[subject]) {
+                    results[subject] = { time: [], concentration: [], dose: dose };
+                }
+
+                results[subject].time.push(time);
+                results[subject].concentration.push(concentration);
+            });
+
+            // Calculate PK parameters for each subject
+            const outputResults = [];
+            for (const subject in results) {
+                const time = results[subject].time;
+                const concentration = results[subject].concentration;
+                const dose = results[subject].dose;
+
+                const cmax = Math.max(...concentration);
+                const tmax = time[concentration.indexOf(cmax)];
+                const tlagIndex = concentration.findIndex(c => c > 0);
+                const tlag = tlagIndex > 0 ? time[tlagIndex - 1] : null;
+                const auc0_t = calculateAUC(time, concentration);
+                const { lambda_z, r2, r2_adjusted } = estimateLambdaZ(time, concentration);
+                const auc0_inf = auc0_t + concentration[concentration.length - 1] / lambda_z;
+                const t_half = Math.log(2) / lambda_z;
+                const cl = dose / auc0_inf;
+                const v = cl / lambda_z;
+                const auc_extrap_pct = (auc0_inf - auc0_t) / auc0_inf * 100;
+
+                outputResults.push({
+                    subject,
+                    cmax,
+                    tmax,
+                    tlag,
+                    auc0_t,
+                    auc0_inf,
+                    auc_extrap_pct,
+                    lambda_z,
+                    t_half,
+                    cl,
+                    v,
+                    r2,
+                    r2_adjusted
+                });
+            }
+
+            displayResults(outputResults);
+        }
+
+        function calculateAUC(time, concentration) {
+            let auc = 0.0;
+            for (let i = 1; i < time.length; i++) {
+                const deltaTime = time[i] - time[i - 1];
+                const deltaConc = concentration[i] - concentration[i - 1];
+
+                if (deltaConc >= 0) {
+                    // Linear interpolation
+                    auc += 0.5 * (concentration[i] + concentration[i - 1]) * deltaTime;
+                } else {
+                    // Logarithmic interpolation
+                    auc += (concentration[i] - concentration[i - 1]) / Math.log(concentration[i] / concentration[i - 1]) * deltaTime;
+                }
+            }
+            return auc;
+        }
+
+        function estimateLambdaZ(time, concentration) {
+            const n = time.length;
+            let bestLambda = 0;
+            let bestAdjustedR2 = -Infinity;
+
+            for (let i = 2; i < n; i++) {
+                let subsetTime = time.slice(i - 2, n);
+                let subsetConcentration = concentration.slice(i - 2, n).map(Math.log);
+                let sumX = subsetTime.reduce((a, b) => a + b, 0);
+                let sumY = subsetConcentration.reduce((a, b) => a + b, 0);
+                let sumXY = subsetTime.map((t, j) => t * subsetConcentration[j]).reduce((a, b) => a + b, 0);
+                let sumX2 = subsetTime.map(t => t * t).reduce((a, b) => a + b, 0);
+
+                let slope = (subsetTime.length * sumXY - sumX * sumY) / (subsetTime.length * sumX2 - sumX * sumX);
+                let intercept = (sumY - slope * sumX) / subsetTime.length;
+
+                let ssTotal = subsetConcentration.map(y => (y - sumY / subsetTime.length) ** 2).reduce((a, b) => a + b, 0);
+                let ssRes = subsetConcentration.map((y, j) => (y - (slope * subsetTime[j] + intercept)) ** 2).reduce((a, b) => a + b, 0);
+
+                let r2 = 1 - (ssRes / ssTotal);
+                let adjR2 = 1 - ((1 - r2) * (subsetTime.length - 1) / (subsetTime.length - 2));
+
+                if (adjR2 > bestAdjustedR2) {
+                    bestAdjustedR2 = adjR2;
+                    bestLambda = -slope;
+                }
+            }
+
+            return { lambda_z: bestLambda, r2: bestAdjustedR2, r2_adjusted: bestAdjustedR2 };
+        }
+        function formatNumber(value) {
+    const strValue = value.toString();
+    if (strValue.includes('.')) {
+        const decimalPlaces = strValue.split('.')[1].length;
+        return value.toFixed(decimalPlaces);
+    } else {
+        return value.toFixed(0);
+    }
+}
+        function displayResults(results) {
+            let table = "<table><tr><th>Subject</th><th>Cmax</th><th>Tmax</th><th>Tlag</th><th>AUC0-t</th><th>AUC0-inf</th><th>AUC Extrap. (%)</th><th>Lambda_z</th><th>t1/2</th><th>CL</th><th>V</th>";
+            results.forEach(row => {
+                table += `<tr>
+                            <td>${row.subject}</td>
+                            <td>${formatNumber(row.cmax)}</td>
+                            <td>${formatNumber(row.tmax)}</td>
+                            <td>${formatNumber(row.tlag)}</td>
+                            <td>${row.auc0_t.toFixed(5)}</td>
+                            <td>${row.auc0_inf.toFixed(5)}</td>
+                            <td>${row.auc_extrap_pct.toFixed(6)}</td>
+                            <td>${row.lambda_z.toFixed(9)}</td>
+                            <td>${row.t_half.toFixed(6)}</td>
+                            <td>${row.cl.toFixed(8)}</td>
+                            <td>${row.v.toFixed(6)}</td>
+                            
+                           </tr>`;
+            });
+            table += "</table>";
+
+            document.getElementById("result-table").innerHTML = table;
+        }
+    </script>
+</body>
+</html>
