@@ -162,6 +162,12 @@
                     <option value="last-three">Last Three Points Method</option>
                 </select>
                 <br>
+                <label for="auc-method-extravascular">Select AUC Calculation Method:</label>
+                <select id="auc-method-extravascular">
+                    <option value="linear-up-linear-down">Linear Up Linear Down</option>
+                    <option value="log-trapezoidal">Linear Up Log Down</option>
+                </select>
+                <br>
                 <button type="button" onclick="uploadFileExtravascular()">Upload and Calculate</button>
                 <button type="button" onclick="downloadExcelExtravascular()">Download Results as Excel</button>
             </form>
@@ -194,6 +200,12 @@
                 <select id="lambda-method-bolus">
                     <option value="adaptive">Adaptive Best Fit Method</option>
                     <option value="last-three">Last Three Points Method</option>
+                </select>
+                <br>
+                <label for="auc-method-bolus">Select AUC Calculation Method:</label>
+                <select id="auc-method-bolus">
+                    <option value="linear-up-linear-down">Linear Up Linear Down</option>
+                    <option value="log-trapezoidal">Linear Up Log Down</option>
                 </select>
                 <br>
                 <button type="button" onclick="uploadFileBolus()">Upload and Calculate</button>
@@ -232,6 +244,12 @@
                     <option value="last-three">Last Three Points Method</option>
                 </select>
                 <br>
+                <label for="auc-method-infusion">Select AUC Calculation Method:</label>
+                <select id="auc-method-infusion">
+                    <option value="linear-up-linear-down">Linear Up Linear Down</option>
+                    <option value="log-trapezoidal">Linear Up Log Down</option>
+                </select>
+                <br>
                 <button type="button" onclick="uploadFileInfusion()">Upload and Calculate</button>
                 <button type="button" onclick="downloadExcelInfusion()">Download Results as Excel</button>
             </form>
@@ -263,9 +281,32 @@
             document.querySelector(`[onclick="openTab('${tabName}')"]`).className += " active";
         }
 
+        // Modify the AUC calculation function to support linear up linear down method
+        function calculateAUC(times, concentrations, aucMethod) {
+            let auc = 0;
+            for (let i = 1; i < times.length; i++) {
+                const deltaTime = times[i] - times[i - 1];
+                const deltaConc = concentrations[i] - concentrations[i - 1];
+
+                if (aucMethod === 'linear-up-linear-down') {
+                    // Linear Up Linear Down method
+                    auc += 0.5 * (concentrations[i] + concentrations[i - 1]) * deltaTime;
+                } else if (aucMethod === 'log-trapezoidal') {
+                    // Logarithmic Trapezoidal method
+                    if (deltaConc >= 0) {
+                        auc += 0.5 * (concentrations[i] + concentrations[i - 1]) * deltaTime;
+                    } else {
+                        auc += (concentrations[i] - concentrations[i - 1]) / Math.log(concentrations[i] / concentrations[i - 1]) * deltaTime;
+                    }
+                }
+            }
+            return auc;
+        }
+        
         function uploadFileExtravascular() {
             const fileInput = document.getElementById("file-extravascular");
             const file = fileInput.files[0];
+            const aucMethod = document.getElementById("auc-method-extravascular").value;
             const reader = new FileReader();
 
             reader.onload = function(event) {
@@ -274,7 +315,7 @@
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                 const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
 
-                processExcelDataExtravascular(jsonData);
+                processExcelDataExtravascular(jsonData,aucMethod);
             };
 
             if (file) {
@@ -284,7 +325,7 @@
             }
         }
 
-        function processExcelDataExtravascular(data) {
+        function processExcelDataExtravascular(data,aucMethod) {
             const headers = data[0].map(header => header.toLowerCase().trim());
             const content = data.slice(1);
 
@@ -315,10 +356,10 @@
                 results[subject].concentration.push(concentration);
             });
 
-            calculatePKParametersExtravascular(results);
+            calculatePKParametersExtravascular(results,aucMethod);
         }
 
-        function calculatePKParametersExtravascular(results) {
+        function calculatePKParametersExtravascular(results,aucMethod) {
             const lambdaMethod = document.getElementById("lambda-method-extravascular").value;
             const outputResults = [];
             for (const subject in results) {
@@ -330,7 +371,7 @@
                 const tmax = time[concentration.indexOf(cmax)];
                 const tlagIndex = concentration.findIndex(c => c > 0);
                 const tlag = tlagIndex > 0 ? time[tlagIndex - 1] : null;
-                const auc0_t = calculateAUC(time, concentration);
+                const auc0_t = calculateAUC(time, concentration,aucMethod);
 
                 let lambda_z, r2, r2_adjusted;
                 if (lambdaMethod === "adaptive") {
@@ -366,23 +407,7 @@
             displayResultsExtravascular(outputResults);
         }
 
-        function calculateAUC(time, concentration) {
-            let auc = 0.0;
-            for (let i = 1; i < time.length; i++) {
-                const deltaTime = time[i] - time[i - 1];
-                const deltaConc = concentration[i] - concentration[i - 1];
-
-        if (deltaConc >= 0) {
-    // Linear interpolation
-           auc += 0.5 * (concentration[i] + concentration[i - 1]) * deltaTime;
-        } else {
-    // Logarithmic interpolation
-          auc += (concentration[i] - concentration[i - 1]) / Math.log(concentration[i] / concentration[i - 1]) * deltaTime;
-                }
-            }
-            return auc;
-        }
-
+      
         function estimateLambdaZ(time, concentration, tmax) {
             const n = time.length;
             let bestLambda = 0;
@@ -423,10 +448,11 @@
         if (adjR2 > bestAdjustedR2) {
             bestAdjustedR2 = adjR2;
             bestLambda = -slope;
+            R2=r2;
         }
     }
 
-    return { lambda_z: bestLambda, r2: bestAdjustedR2, r2_adjusted: bestAdjustedR2 };
+    return { lambda_z: bestLambda, r2: R2, r2_adjusted: bestAdjustedR2 };
 }
 
         function estimateLambdaZLastThree(time, concentration) {
@@ -536,6 +562,7 @@
         function uploadFileBolus() {
             const fileInput = document.getElementById("file-bolus");
             const file = fileInput.files[0];
+            const aucMethod = document.getElementById("auc-method-bolus").value;
             const reader = new FileReader();
 
             reader.onload = function(event) {
@@ -544,7 +571,7 @@
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                 const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
 
-                processExcelDataBolus(jsonData);
+                processExcelDataBolus(jsonData,aucMethod);
             };
 
             if (file) {
@@ -554,7 +581,7 @@
             }
         }
 
-        function processExcelDataBolus(data) {
+        function processExcelDataBolus(data,aucMethod) {
             const headers = data[0].map(header => header.toString().toLowerCase().trim());
             const content = data.slice(1);
 
@@ -585,10 +612,10 @@
                 results[subject].concentration.push(concentration);
             });
 
-            calculatePKParametersBolus(results);
+            calculatePKParametersBolus(results,aucMethod);
         }
 
-        function calculatePKParametersBolus(results) {
+        function calculatePKParametersBolus(results,aucMethod) {
             const lambdaMethod = document.getElementById("lambda-method-bolus").value;
             const outputResults = [];
 
@@ -600,7 +627,7 @@
                 // Calculate PK parameters
                 const cmax = Math.max(...concentration);
                 const tmax = time[concentration.indexOf(cmax)];
-                const auc0_t = calculateAUC(time, concentration);
+                const auc0_t = calculateAUC(time, concentration,aucMethod);
                 let lambda_zResult;
 
                 if (lambdaMethod === "adaptive") {
@@ -650,23 +677,6 @@
             displayResultsBolus(outputResults);
         }
 
-        function calculateAUC(time, concentration) {
-            let auc = 0.0;
-            for (let i = 1; i < time.length; i++) {
-                const deltaTime = time[i] - time[i - 1];
-                const deltaConc = concentration[i] - concentration[i - 1];
-
-        if (deltaConc >= 0) {
-    // Linear interpolation
-           auc += 0.5 * (concentration[i] + concentration[i - 1]) * deltaTime;
-        } else {
-    // Logarithmic interpolation
-          auc += (concentration[i] - concentration[i - 1]) / Math.log(concentration[i] / concentration[i - 1]) * deltaTime;
-                }
-            }
-            return auc;
-        }
-
         function estimateLambdaZAdaptive(times, concentrations) {
             const n = times.length;
             let bestLambda = 0;
@@ -693,10 +703,11 @@
                 if (adjR2 > bestAdjustedR2) {
                     bestAdjustedR2 = adjR2;
                     bestLambda = -slope;
+                    R2=r2;
                 }
             }
 
-            return { lambda_z: bestLambda, r2: bestAdjustedR2, r2_adjusted: bestAdjustedR2 };
+            return { lambda_z: bestLambda, r2: R2, r2_adjusted: bestAdjustedR2 };
         }
 
         function estimateLambdaZLastThree(times, concentrations) {
@@ -803,6 +814,7 @@
         function uploadFileInfusion() {
             const fileInput = document.getElementById("file-infusion");
             const file = fileInput.files[0];
+            const aucMethod = document.getElementById("auc-method-infusion").value;
             const reader = new FileReader();
 
             reader.onload = function(event) {
@@ -811,7 +823,7 @@
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                 const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
 
-                processExcelDataInfusion(jsonData);
+                processExcelDataInfusion(jsonData,aucMethod);
             };
 
             if (file) {
@@ -821,7 +833,7 @@
             }
         }
 
-        function processExcelDataInfusion(data) {
+        function processExcelDataInfusion(data,aucMethod) {
             const headers = data[0].map(header => header.toString().toLowerCase().trim());
             const content = data.slice(1);
 
@@ -855,10 +867,10 @@
                 results[subject].samplingTime.push(samplingTime);
             });
 
-            calculatePKParametersInfusion(results);
+            calculatePKParametersInfusion(results,aucMethod);
         }
 
-        function calculatePKParametersInfusion(results) {
+        function calculatePKParametersInfusion(results,aucMethod) {
             const lambdaMethod = document.getElementById("lambda-method-infusion").value;
             const outputResults = [];
 
@@ -873,7 +885,7 @@
                 const cmax = Math.max(...concentrations);
                 const tmax = samplingTimes[concentrations.indexOf(cmax)];
                 const infusionDuration = infusionEnd - infusionStart;
-                const auc0_t = calculateAUC(samplingTimes, concentrations);
+                const auc0_t = calculateAUC(samplingTimes, concentrations,aucMethod);
                 let lambda_zResult;
                 
                 if (lambdaMethod === "adaptive") {
@@ -909,23 +921,7 @@
             displayResultsInfusion(outputResults);
         }
 
-        function calculateAUC(times, concentrations) {
-            let auc = 0;
-            for (let i = 1; i < times.length; i++) {
-                const deltaTime = times[i] - times[i - 1];
-                const deltaConc = concentrations[i] - concentrations[i - 1];
-
-        if (deltaConc >= 0) {
-    // Linear interpolation
-           auc += 0.5 * (concentrations[i] + concentrations[i - 1]) * deltaTime;
-        } else {
-    // Logarithmic interpolation
-          auc += (concentrations[i] - concentrations[i - 1]) / Math.log(concentrations[i] / concentrations[i - 1]) * deltaTime;
-                }
-            }
-            return auc;
-        }      
-       
+        
            
         // Estimate Lambda Z using Adaptive Best Fit Method (find the best R² adjusted)
         // This method excludes times before the infusion end time
@@ -963,10 +959,11 @@
                 if (adjR2 > bestAdjustedR2) {
                     bestAdjustedR2 = adjR2;
                     bestLambda = -slope;
+                    R2=r2;
                 }
             }
 
-            return { lambda_z: bestLambda, r2: bestAdjustedR2, r2_adjusted: bestAdjustedR2 };
+            return { lambda_z: bestLambda, r2: R2, r2_adjusted: bestAdjustedR2 };
         }
 
         // Estimate Lambda Z using the Last Three Points Method
