@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NCA PK Parameter Estimate (Extravascular, IV Bolus & IV Infusion)</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        .tabs {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .tabs button {
+            padding: 12px 25px;
+            margin: 5px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .tabs button.active {
+            background-color: #b3004b;
+        }
+        .tabs button:hover {
+            background-color: #b30054;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .note {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+        ul {
+            list-style: disc;
+            margin-left: 20px;
+        }
+        form {
+            margin-bottom: 30px;
+        }
+        input[type="file"] {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            border: 1px solid #ced4da;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        select {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            width: 100%;
+            border: 1px solid #ced4da;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 12px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        button[type="button"] {
+            background-color: #007bff;
+        }
+        button[type="button"]:hover {
+            background-color: #b3006e;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table th, table td {
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            text-align: center;
+        }
+        table th {
+            background-color: #007bff;
+            color: white;
+        }
+        table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        table tr:hover {
+            background-color: #f1f1f1;
+        }
+        .output {
+            margin-top: 30px;
+        }
+        .output h3 {
+            margin-bottom: 15px;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>NCA PK Parameter Estimate (Extravascular, IV Bolus & IV Infusion)</h2>
+
+        <div class="tabs">
+            <button class="tab-link active" onclick="openTab('extravascular')">Extravascular</button>
+            <button class="tab-link" onclick="openTab('iv-bolus')">IV Bolus</button>
+            <button class="tab-link" onclick="openTab('iv-infusion')">IV Infusion</button>
+        </div>
+
+        <!-- Extravascular Section -->
+        <div id="extravascular" class="tab-content active">
+            <h3>Extravascular PK Parameter Estimate</h3>
+            <div class="note">
+                <p><strong>Note:</strong> The uploaded Excel file must contain the following columns:</p>
+                <ul>
+                    <li><strong>Subject</strong>: Identifier for the subject</li>
+                    <li><strong>Dose</strong>: Administered dose</li>
+                    <li><strong>Time</strong>: Time points for concentration measurements</li>
+                    <li><strong>Concentration</strong>: Measured concentration values</li>
+                </ul>
+            </div>
+
+            <form id="upload-form-extravascular" enctype="multipart/form-data">
+                <label for="file-extravascular">Upload Excel File:</label>
+                <input type="file" id="file-extravascular" name="file" accept=".xlsx, .xls">
+                <br>
+                <label for="lambda-method-extravascular">Select Lambda Z Calculation Method:</label>
+                <select id="lambda-method-extravascular">
+                    <option value="adaptive">Adaptive Best Fit Method</option>
+                    <option value="last-three">Last Three Points Method</option>
+                </select>
+                <br>
+                <button type="button" onclick="uploadFileExtravascular()">Upload and Calculate</button>
+                <button type="button" onclick="downloadExcelExtravascular()">Download Results as Excel</button>
+            </form>
+
+            <div class="output">
+                <h3>Results</h3>
+                <div id="result-table-extravascular"></div>
+            </div>
+        </div>
+
+        <!-- IV Bolus Section -->
+        <div id="iv-bolus" class="tab-content">
+            <h3>IV Bolus PK Parameter Estimate</h3>
+
+            <div class="note">
+                <p><strong>Note:</strong> The uploaded Excel file must contain the following columns:</p>
+                <ul>
+                    <li><strong>Subject</strong>: Identifier for the subject</li>
+                    <li><strong>Dose</strong>: Administered dose</li>
+                    <li><strong>Time</strong>: Time points for concentration measurements</li>
+                    <li><strong>Concentration</strong>: Measured concentration values</li>
+                </ul>
+            </div>
+
+            <form id="upload-form-bolus" enctype="multipart/form-data">
+                <label for="file-bolus">Upload Excel File:</label>
+                <input type="file" id="file-bolus" name="file" accept=".xlsx, .xls">
+                <br>
+                <label for="lambda-method-bolus">Select Lambda Z Calculation Method:</label>
+                <select id="lambda-method-bolus">
+                    <option value="adaptive">Adaptive Best Fit Method</option>
+                    <option value="last-three">Last Three Points Method</option>
+                </select>
+                <br>
+                <button type="button" onclick="uploadFileBolus()">Upload and Calculate</button>
+                <button type="button" onclick="downloadExcelBolus()">Download Results as Excel</button>
+            </form>
+
+            <div class="output">
+                <h3>Results</h3>
+                <div id="result-table-bolus"></div>
+            </div>
+        </div>
+
+        <!-- IV Infusion Section -->
+        <div id="iv-infusion" class="tab-content">
+            <h3>IV Infusion PK Parameter Estimate</h3>
+
+            <div class="note">
+                <p><strong>Note:</strong> The uploaded Excel file must contain the following columns:</p>
+                <ul>
+                    <li><strong>Subject</strong>: Identifier for the subject</li>
+                    <li><strong>Concentration</strong>: Measured concentration values</li>
+                    <li><strong>Dose</strong>: Administered dose</li>
+                    <li><strong>Infusion Start Time</strong>: Start time of infusion</li>
+                    <li><strong>Infusion End Time</strong>: End time of infusion</li>
+                    <li><strong>Sampling Time</strong>: Time points for concentration measurements</li>
+                </ul>
+            </div>
+
+            <form id="upload-form-infusion" enctype="multipart/form-data">
+                <label for="file-infusion">Upload Excel File:</label>
+                <input type="file" id="file-infusion" name="file" accept=".xlsx, .xls">
+                <br>
+                <label for="lambda-method-infusion">Select Lambda Z Calculation Method:</label>
+                <select id="lambda-method-infusion">
+                    <option value="adaptive">Adaptive Best Fit Method</option>
+                    <option value="last-three">Last Three Points Method</option>
+                </select>
+                <br>
+                <button type="button" onclick="uploadFileInfusion()">Upload and Calculate</button>
+                <button type="button" onclick="downloadExcelInfusion()">Download Results as Excel</button>
+            </form>
+
+            <div class="output">
+                <h3>Results</h3>
+                <div id="result-table-infusion"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include xlsx.js and math.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.6.4/math.min.js"></script>
+
+    <script>
+        // Tab functionality
+        function openTab(tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tab-link");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            document.querySelector(`[onclick="openTab('${tabName}')"]`).className += " active";
+        }
+
+        function uploadFileExtravascular() {
+            const fileInput = document.getElementById("file-extravascular");
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+                processExcelDataExtravascular(jsonData);
+            };
+
+            if (file) {
+                reader.readAsArrayBuffer(file);
+            } else {
+                alert("Please upload a file.");
+            }
+        }
+
+        function processExcelDataExtravascular(data) {
+            const headers = data[0].map(header => header.toLowerCase().trim());
+            const content = data.slice(1);
+
+            const subjectIdx = headers.indexOf(headers.find(h => h.includes('subject')));
+            const timeIdx = headers.indexOf(headers.find(h => h.includes('time')));
+            const doseIdx = headers.indexOf(headers.find(h => h.includes('dose')));
+            const concentrationIdx = headers.indexOf(headers.find(h => h.includes('concentration')));
+
+            if (subjectIdx === -1 || timeIdx === -1 || doseIdx === -1 || concentrationIdx === -1) {
+                alert("The uploaded file is missing required columns (Subject, Time, Dose, Concentration).");
+                return;
+            }
+
+            const results = {};
+
+            // Group data by subject
+            content.forEach(row => {
+                const subject = row[subjectIdx];
+                const time = parseFloat(row[timeIdx]);
+                const dose = parseFloat(row[doseIdx]);
+                const concentration = parseFloat(row[concentrationIdx]);
+
+                if (!results[subject]) {
+                    results[subject] = { time: [], concentration: [], dose: dose };
+                }
+
+                results[subject].time.push(time);
+                results[subject].concentration.push(concentration);
+            });
+
+            calculatePKParametersExtravascular(results);
+        }
+
+        function calculatePKParametersExtravascular(results) {
+            const lambdaMethod = document.getElementById("lambda-method-extravascular").value;
+            const outputResults = [];
+            for (const subject in results) {
+                const time = results[subject].time;
+                const concentration = results[subject].concentration;
+                const dose = results[subject].dose;
+
+                const cmax = Math.max(...concentration);
+                const tmax = time[concentration.indexOf(cmax)];
+                const tlagIndex = concentration.findIndex(c => c > 0);
+                const tlag = tlagIndex > 0 ? time[tlagIndex - 1] : null;
+                const auc0_t = calculateAUC(time, concentration);
+
+                let lambda_z, r2, r2_adjusted;
+                if (lambdaMethod === "adaptive") {
+                    ({ lambda_z, r2, r2_adjusted } = estimateLambdaZ(time, concentration, tmax));
+                } else if (lambdaMethod === "last-three") {
+                    ({ lambda_z, r2, r2_adjusted } = estimateLambdaZLastThree(time, concentration));
+                }
+
+                const auc0_inf = auc0_t + concentration[concentration.length - 1] / lambda_z;
+                const t_half = Math.log(2) / lambda_z;
+                const cl = dose / auc0_inf;
+                const v = cl / lambda_z;
+                const auc_extrap_pct = (auc0_inf - auc0_t) / auc0_inf * 100;
+
+                outputResults.push({
+                    subject,
+                    cmax,
+                    tmax,
+                    tlag,
+                    auc0_t,
+                    auc0_inf,
+                    auc_extrap_pct,
+                    lambda_z,
+                    t_half,
+                    cl,
+                    v,
+                    r2,
+                    r2_adjusted,
+                    lambdaMethod: lambdaMethod === "adaptive" ? "Adaptive Best Fit" : "Last Three Points"
+                });
+            }
+
+            displayResultsExtravascular(outputResults);
+        }
+
+        function calculateAUC(time, concentration) {
+            let auc = 0.0;
+            for (let i = 1; i < time.length; i++) {
+                const deltaTime = time[i] - time[i - 1];
+                const deltaConc = concentration[i] - concentration[i - 1];
+
+        if (deltaConc >= 0) {
+    // Linear interpolation
+           auc += 0.5 * (concentration[i] + concentration[i - 1]) * deltaTime;
+        } else {
+    // Logarithmic interpolation
+          auc += (concentration[i] - concentration[i - 1]) / Math.log(concentration[i] / concentration[i - 1]) * deltaTime;
+                }
+            }
+            return auc;
+        }
+
+        function estimateLambdaZ(time, concentration, tmax) {
+            const n = time.length;
+            let bestLambda = 0;
+            let bestAdjustedR2 = -Infinity;
+
+            const tmaxIndex = time.findIndex(t => t === tmax);
+
+            if (tmaxIndex === -1 || tmaxIndex >= n - 2) {
+                return { lambda_z: NaN, r2: NaN, r2_adjusted: NaN };
+            }
+
+            const filteredTime = time.slice(tmaxIndex + 1);
+            const filteredConcentration = concentration.slice(tmaxIndex + 1);
+
+            if (filteredTime.length < 3) {
+                return { lambda_z: NaN, r2: NaN, r2_adjusted: NaN };
+            }
+
+    for (let i = 2; i < filteredTime.length; i++) {
+        let subsetTime = filteredTime.slice(i - 2);
+        let subsetConcentration = filteredConcentration.slice(i - 2).map(Math.log);
+
+        let sumX = subsetTime.reduce((a, b) => a + b, 0);
+        let sumY = subsetConcentration.reduce((a, b) => a + b, 0);
+        let sumXY = subsetTime.map((t, j) => t * subsetConcentration[j]).reduce((a, b) => a + b, 0);
+        let sumX2 = subsetTime.map(t => t * t).reduce((a, b) => a + b, 0);
+
+        let nSubset = subsetTime.length;
+        let slope = (nSubset * sumXY - sumX * sumY) / (nSubset * sumX2 - sumX * sumX);
+        let intercept = (sumY - slope * sumX) / nSubset;
+
+        let ssTotal = subsetConcentration.map(y => (y - sumY / nSubset) ** 2).reduce((a, b) => a + b, 0);
+        let ssRes = subsetConcentration.map((y, j) => (y - (slope * subsetTime[j] + intercept)) ** 2).reduce((a, b) => a + b, 0);
+
+        let r2 = 1 - (ssRes / ssTotal);
+        let adjR2 = 1 - ((1 - r2) * (nSubset - 1) / (nSubset - 2));
+
+        if (adjR2 > bestAdjustedR2) {
+            bestAdjustedR2 = adjR2;
+            bestLambda = -slope;
+        }
+    }
+
+    return { lambda_z: bestLambda, r2: bestAdjustedR2, r2_adjusted: bestAdjustedR2 };
+}
+
+        function estimateLambdaZLastThree(time, concentration) {
+            const n = time.length;
+            if (n < 3) {
+                return { lambda_z: NaN, r2: NaN, r2_adjusted: NaN };
+            }
+
+            const subsetTime = time.slice(-3);
+            const subsetConcentration = concentration.slice(-3).map(Math.log);
+            const sumX = subsetTime.reduce((a, b) => a + b, 0);
+            const sumY = subsetConcentration.reduce((a, b) => a + b, 0);
+            const sumXY = subsetTime.map((t, j) => t * subsetConcentration[j]).reduce((a, b) => a + b, 0);
+            const sumX2 = subsetTime.map(t => t * t).reduce((a, b) => a + b, 0);
+
+            const slope = (subsetTime.length * sumXY - sumX * sumY) / (subsetTime.length * sumX2 - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / subsetTime.length;
+
+            const ssTotal = subsetConcentration.map(y => (y - sumY / subsetTime.length) ** 2).reduce((a, b) => a + b, 0);
+            const ssRes = subsetConcentration.map((y, j) => (y - (slope * subsetTime[j] + intercept)) ** 2).reduce((a, b) => a + b, 0);
+
+            const r2 = 1 - (ssRes / ssTotal);
+            const adjR2 = 1 - ((1 - r2) * (subsetTime.length - 1) / (subsetTime.length - 2));
+
+            return { lambda_z: -slope, r2, r2_adjusted: adjR2 };
+        }
+
+        function formatNumber(value) {
+    const strValue = value.toString();
+    if (strValue.includes('.')) {
+        const decimalPlaces = strValue.split('.')[1].length;
+        return value.toFixed(decimalPlaces);
+    } else {
+        return value.toFixed(0);
+    }
+}
+        
+        
+        function displayResultsExtravascular(results)  {
+            let resultHtml = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Cmax</th>
+                            <th>Tmax</th>
+                            <th>Tlag</th>
+                            <th>AUC0-t</th>
+                            <th>AUC0-inf</th>
+                            <th>AUC%Extrap</th>
+                            <th>Lambda Z</th>
+                            <th>t1/2</th>
+                            <th>CL</th>
+                            <th>V</th>
+                            <th>R²</th>
+                            <th>R² Adjusted</th>
+                            <th>Lambda Z Method</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            results.forEach(result => {
+                resultHtml += `
+                    <tr>
+                        <td>${result.subject}</td>
+                        <td>${formatNumber(result.cmax)}</td>
+                        <td>${formatNumber(result.tmax)}</td>
+                        <td>${formatNumber(result.tlag)}</td>
+                        <td>${result.auc0_t.toFixed(2)}</td>
+                        <td>${result.auc0_inf.toFixed(2)}</td>
+                        <td>${result.auc_extrap_pct.toFixed(2)}</td>
+                        <td>${result.lambda_z.toFixed(4)}</td>
+                        <td>${result.t_half.toFixed(2)}</td>
+                        <td>${result.cl.toFixed(2)}</td>
+                        <td>${result.v.toFixed(2)}</td>
+                        <td>${result.r2.toFixed(4)}</td>
+                        <td>${result.r2_adjusted.toFixed(4)}</td>
+                        <td>${result.lambdaMethod}</td>
+                    </tr>
+                `;
+            });
+
+            resultHtml += `</tbody></table>`;
+
+            document.getElementById("result-table-extravascular").innerHTML = resultHtml;
+        }
+
+       function downloadExcelExtravascular() {
+            const table = document.querySelector("table");
+            const headers = Array.from(table.querySelectorAll("th")).map(header => header.innerText);
+            const rows = Array.from(table.querySelectorAll("tbody tr")).map(row => {
+                return Array.from(row.querySelectorAll("td")).map(cell => cell.innerText);
+            });
+
+            const worksheetData = [headers, ...rows];
+            
+            // Create a new workbook and append the worksheet data
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+            XLSX.utils.book_append_sheet(wb, ws, "Extravascular PK Parameters");
+
+            // Trigger the download
+            XLSX.writeFile(wb, "Extravascular_PK_Parameters_Results.xlsx");
+        }      
+
+        function uploadFileBolus() {
+            const fileInput = document.getElementById("file-bolus");
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+                processExcelDataBolus(jsonData);
+            };
+
+            if (file) {
+                reader.readAsArrayBuffer(file);
+            } else {
+                alert("Please upload a file.");
+            }
+        }
+
+        function processExcelDataBolus(data) {
+            const headers = data[0].map(header => header.toString().toLowerCase().trim());
+            const content = data.slice(1);
+
+            const subjectIdx = headers.indexOf(headers.find(h => h.includes('subject')));
+            const timeIdx = headers.indexOf(headers.find(h => h.includes('time')));
+            const doseIdx = headers.indexOf(headers.find(h => h.includes('dose')));
+            const concentrationIdx = headers.indexOf(headers.find(h => h.includes('concentration')));
+
+            if (subjectIdx === -1 || timeIdx === -1 || doseIdx === -1 || concentrationIdx === -1) {
+                alert("The uploaded file is missing required columns (Subject, Time, Dose, Concentration).");
+                return;
+            }
+
+            const results = {};
+
+            // Group data by subject
+            content.forEach(row => {
+                const subject = row[subjectIdx];
+                const time = parseFloat(row[timeIdx]);
+                const dose = parseFloat(row[doseIdx]);
+                const concentration = parseFloat(row[concentrationIdx]);
+
+                if (!results[subject]) {
+                    results[subject] = { time: [], concentration: [], dose: dose };
+                }
+
+                results[subject].time.push(time);
+                results[subject].concentration.push(concentration);
+            });
+
+            calculatePKParametersBolus(results);
+        }
+
+        function calculatePKParametersBolus(results) {
+            const lambdaMethod = document.getElementById("lambda-method-bolus").value;
+            const outputResults = [];
+
+            for (const subject in results) {
+                const time = results[subject].time;
+                const concentration = results[subject].concentration;
+                const dose = results[subject].dose;
+
+                // Calculate PK parameters
+                const cmax = Math.max(...concentration);
+                const tmax = time[concentration.indexOf(cmax)];
+                const auc0_t = calculateAUC(time, concentration);
+                let lambda_zResult;
+
+                if (lambdaMethod === "adaptive") {
+                    lambda_zResult = estimateLambdaZAdaptive(time, concentration);
+                } else if (lambdaMethod === "last-three") {
+                    lambda_zResult = estimateLambdaZLastThree(time, concentration);
+                }
+
+                const lambda_z = lambda_zResult.lambda_z;
+                const auc0_inf = auc0_t + concentration[concentration.length - 1] / lambda_z;
+                const auc_extrap_pct = (auc0_inf - auc0_t) / auc0_inf * 100;
+                const t_half = Math.log(2) / lambda_z;
+                const cl = dose / auc0_inf;
+                const v = cl / lambda_z;
+
+                // Calculate C0 using the first two non-zero concentrations
+                const firstNonZeroIndex = concentration.findIndex(c => c > 0);
+                const secondNonZeroIndex = concentration.slice(firstNonZeroIndex + 1).findIndex(c => c > 0) + firstNonZeroIndex + 1;
+
+                const t1 = time[firstNonZeroIndex];
+                const t2 = time[secondNonZeroIndex];
+                const c1 = concentration[firstNonZeroIndex];
+                const c2 = concentration[secondNonZeroIndex];
+
+                // Calculate the slope of the line between the first two non-zero points
+                const slope = (Math.log(c2) - Math.log(c1)) / (t2 - t1);
+                const c0 = c1 * Math.exp(slope * -t1);
+
+                outputResults.push({
+                    subject,
+                    cmax,
+                    tmax,
+                    auc0_t,
+                    auc0_inf,
+                    auc_extrap_pct,
+                    lambda_z,
+                    t_half,
+                    cl,
+                    v,
+                    c0, // Add C0 to the output results
+                    r2: lambda_zResult.r2,
+                    r2_adjusted: lambda_zResult.r2_adjusted,
+                    lambdaMethod: lambdaMethod === "adaptive" ? "Adaptive Best Fit" : "Last Three Points"
+                });
+            }
+
+            displayResultsBolus(outputResults);
+        }
+
+        function calculateAUC(time, concentration) {
+            let auc = 0.0;
+            for (let i = 1; i < time.length; i++) {
+                const deltaTime = time[i] - time[i - 1];
+                const deltaConc = concentration[i] - concentration[i - 1];
+
+        if (deltaConc >= 0) {
+    // Linear interpolation
+           auc += 0.5 * (concentration[i] + concentration[i - 1]) * deltaTime;
+        } else {
+    // Logarithmic interpolation
+          auc += (concentration[i] - concentration[i - 1]) / Math.log(concentration[i] / concentration[i - 1]) * deltaTime;
+                }
+            }
+            return auc;
+        }
+
+        function estimateLambdaZAdaptive(times, concentrations) {
+            const n = times.length;
+            let bestLambda = 0;
+            let bestAdjustedR2 = -Infinity;
+
+            for (let i = 2; i < n; i++) {
+                const subsetTimes = times.slice(i);
+                const subsetConcentrations = concentrations.slice(i).map(c => Math.log(c));
+
+                const sumX = subsetTimes.reduce((a, b) => a + b, 0);
+                const sumY = subsetConcentrations.reduce((a, b) => a + b, 0);
+                const sumXY = subsetTimes.reduce((acc, val, j) => acc + val * subsetConcentrations[j], 0);
+                const sumX2 = subsetTimes.reduce((acc, val) => acc + val * val, 0);
+
+                const slope = (subsetTimes.length * sumXY - sumX * sumY) / (subsetTimes.length * sumX2 - sumX * sumX);
+                const intercept = (sumY - slope * sumX) / subsetTimes.length;
+
+                const ssTotal = subsetConcentrations.map(y => (y - sumY / subsetTimes.length) ** 2).reduce((a, b) => a + b, 0);
+                const ssRes = subsetConcentrations.map((y, j) => (y - (slope * subsetTimes[j] + intercept)) ** 2).reduce((a, b) => a + b, 0);
+
+                const r2 = 1 - (ssRes / ssTotal);
+                const adjR2 = 1 - ((1 - r2) * (subsetTimes.length - 1) / (subsetTimes.length - 2));
+
+                if (adjR2 > bestAdjustedR2) {
+                    bestAdjustedR2 = adjR2;
+                    bestLambda = -slope;
+                }
+            }
+
+            return { lambda_z: bestLambda, r2: bestAdjustedR2, r2_adjusted: bestAdjustedR2 };
+        }
+
+        function estimateLambdaZLastThree(times, concentrations) {
+            const n = times.length;
+            if (n < 3) {
+                return { lambda_z: NaN, r2: NaN, r2_adjusted: NaN };
+            }
+
+            const subsetTimes = times.slice(-3);
+            const subsetConcentrations = concentrations.slice(-3).map(c => Math.log(c));
+            const sumX = subsetTimes.reduce((a, b) => a + b, 0);
+            const sumY = subsetConcentrations.reduce((a, b) => a + b, 0);
+            const sumXY = subsetTimes.reduce((acc, val, i) => acc + val * subsetConcentrations[i], 0);
+            const sumX2 = subsetTimes.reduce((acc, val) => acc + val * val, 0);
+
+            const slope = (subsetTimes.length * sumXY - sumX * sumY) / (subsetTimes.length * sumX2 - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / subsetTimes.length;
+
+            const ssTotal = subsetConcentrations.map(y => (y - sumY / subsetTimes.length) ** 2).reduce((a, b) => a + b, 0);
+            const ssRes = subsetConcentrations.map((y, i) => (y - (slope * subsetTimes[i] + intercept)) ** 2).reduce((a, b) => a + b, 0);
+
+            const r2 = 1 - (ssRes / ssTotal);
+            const adjR2 = 1 - ((1 - r2) * (subsetTimes.length - 1) / (subsetTimes.length - 2));
+
+            return { lambda_z: -slope, r2, r2_adjusted: adjR2 };
+        }
+
+        function formatNumber(value) {
+    const strValue = value.toString();
+    if (strValue.includes('.')) {
+        const decimalPlaces = strValue.split('.')[1].length;
+        return value.toFixed(decimalPlaces);
+    } else {
+        return value.toFixed(0);
+    }
+}
+       
+        function displayResultsBolus(results) {
+            let resultHtml = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Cmax</th>
+                            <th>Tmax</th>
+                            <th>AUC0-t</th>
+                            <th>AUC0-inf</th>
+                            <th>AUC%Extrap</th>
+                            <th>Lambda Z</th>
+                            <th>t1/2</th>
+                            <th>CL</th>
+                            <th>V</th>
+                            <th>C0</th>
+                            <th>R²</th>
+                            <th>R² Adjusted</th>
+                            <th>Lambda Z Method</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            results.forEach(result => {
+                resultHtml += `
+                    <tr>
+                        <td>${result.subject}</td>
+                        <td>${formatNumber(result.cmax)}</td>
+                        <td>${formatNumber(result.tmax)}</td>
+                        <td>${result.auc0_t.toFixed(2)}</td>
+                        <td>${result.auc0_inf.toFixed(2)}</td>
+                        <td>${result.auc_extrap_pct.toFixed(2)}</td>
+                        <td>${result.lambda_z.toFixed(4)}</td>
+                        <td>${result.t_half.toFixed(2)}</td>
+                        <td>${result.cl.toFixed(2)}</td>
+                        <td>${result.v.toFixed(2)}</td>
+                        <td>${result.c0.toFixed(2)}</td>
+                        <td>${result.r2.toFixed(4)}</td>
+                        <td>${result.r2_adjusted.toFixed(4)}</td>
+                        <td>${result.lambdaMethod}</td>
+                    </tr>
+                `;
+            });
+
+            resultHtml += `</tbody></table>`;
+
+            document.getElementById("result-table-bolus").innerHTML = resultHtml;
+        }
+
+        function downloadExcelBolus() {
+            const table = document.querySelector("table");
+            const headers = Array.from(table.querySelectorAll("th")).map(header => header.innerText);
+            const rows = Array.from(table.querySelectorAll("tbody tr")).map(row => {
+                return Array.from(row.querySelectorAll("td")).map(cell => cell.innerText);
+            });
+
+            const worksheetData = [headers, ...rows];
+            
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+            XLSX.utils.book_append_sheet(wb, ws, "IV Bolus PK Parameters");
+
+            XLSX.writeFile(wb, "IV_Bolus_PK_Parameters.xlsx");
+        }
+        
+        function uploadFileInfusion() {
+            const fileInput = document.getElementById("file-infusion");
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+                processExcelDataInfusion(jsonData);
+            };
+
+            if (file) {
+                reader.readAsArrayBuffer(file);
+            } else {
+                alert("Please upload a file.");
+            }
+        }
+
+        function processExcelDataInfusion(data) {
+            const headers = data[0].map(header => header.toString().toLowerCase().trim());
+            const content = data.slice(1);
+
+            const subjectIdx = headers.indexOf(headers.find(h => h.includes('subject')));
+            const concentrationIdx = headers.indexOf(headers.find(h => h.includes('concentration')));
+            const doseIdx = headers.indexOf(headers.find(h => h.includes('dose')));
+            const infusionStartIdx = headers.indexOf(headers.find(h => h.includes('infusion start time')));
+            const infusionEndIdx = headers.indexOf(headers.find(h => h.includes('infusion end time')));
+            const samplingTimeIdx = headers.indexOf(headers.find(h => h.includes('sampling time')));
+
+            if (subjectIdx === -1 || concentrationIdx === -1 || doseIdx === -1 || infusionStartIdx === -1 || infusionEndIdx === -1 || samplingTimeIdx === -1) {
+                alert("The uploaded file is missing required columns (Subject, Concentration, Dose, Infusion start time, Infusion end time, Sampling time).");
+                return;
+            }
+
+            const results = {};
+
+            content.forEach(row => {
+                const subject = row[subjectIdx];
+                const concentration = parseFloat(row[concentrationIdx]);
+                const dose = parseFloat(row[doseIdx]);
+                const infusionStart = parseFloat(row[infusionStartIdx]);
+                const infusionEnd = parseFloat(row[infusionEndIdx]);
+                const samplingTime = parseFloat(row[samplingTimeIdx]);
+
+                if (!results[subject]) {
+                    results[subject] = { concentration: [], dose: dose, infusionStart: infusionStart, infusionEnd: infusionEnd, samplingTime: [] };
+                }
+
+                results[subject].concentration.push(concentration);
+                results[subject].samplingTime.push(samplingTime);
+            });
+
+            calculatePKParametersInfusion(results);
+        }
+
+        function calculatePKParametersInfusion(results) {
+            const lambdaMethod = document.getElementById("lambda-method-infusion").value;
+            const outputResults = [];
+
+            for (const subject in results) {
+                const concentrations = results[subject].concentration;
+                const samplingTimes = results[subject].samplingTime;
+                const dose = results[subject].dose;
+                const infusionStart = results[subject].infusionStart;
+                const infusionEnd = results[subject].infusionEnd;
+
+                // Calculate PK parameters
+                const cmax = Math.max(...concentrations);
+                const tmax = samplingTimes[concentrations.indexOf(cmax)];
+                const infusionDuration = infusionEnd - infusionStart;
+                const auc0_t = calculateAUC(samplingTimes, concentrations);
+                let lambda_zResult;
+                
+                if (lambdaMethod === "adaptive") {
+                    lambda_zResult = estimateLambdaZAdaptiveInfusion(samplingTimes, concentrations, infusionEnd);
+                } else if (lambdaMethod === "last-three") {
+                    lambda_zResult = estimateLambdaZLastThree(samplingTimes, concentrations);
+                }
+                
+                const lambda_z = lambda_zResult.lambda_z;
+                const auc0_inf = auc0_t + concentrations[concentrations.length - 1] / lambda_z;
+                const auc_extrap_pct = (auc0_inf - auc0_t) / auc0_inf * 100;
+                const t_half = Math.log(2) / lambda_z;
+                const cl = dose / auc0_inf;
+                const v = cl / lambda_z;
+
+                outputResults.push({
+                    subject,
+                    cmax,
+                    tmax,
+                    auc0_t,
+                    auc0_inf,
+                    auc_extrap_pct,
+                    lambda_z,
+                    t_half,
+                    cl,
+                    v,
+                    r2: lambda_zResult.r2,
+                    r2_adjusted: lambda_zResult.r2_adjusted,
+                    lambdaMethod: lambdaMethod === "adaptive" ? "Adaptive Best Fit" : "Last Three Points"
+                });
+            }
+
+            displayResultsInfusion(outputResults);
+        }
+
+        function calculateAUC(times, concentrations) {
+            let auc = 0;
+            for (let i = 1; i < times.length; i++) {
+                const deltaTime = times[i] - times[i - 1];
+                const deltaConc = concentrations[i] - concentrations[i - 1];
+
+        if (deltaConc >= 0) {
+    // Linear interpolation
+           auc += 0.5 * (concentrations[i] + concentrations[i - 1]) * deltaTime;
+        } else {
+    // Logarithmic interpolation
+          auc += (concentrations[i] - concentrations[i - 1]) / Math.log(concentrations[i] / concentrations[i - 1]) * deltaTime;
+                }
+            }
+            return auc;
+        }      
+       
+           
+        // Estimate Lambda Z using Adaptive Best Fit Method (find the best R² adjusted)
+        // This method excludes times before the infusion end time
+        function estimateLambdaZAdaptiveInfusion(times, concentrations, infusionEnd) {
+            const n = times.length;
+            let bestLambda = 0;
+            let bestAdjustedR2 = -Infinity;
+
+            // Filter times and concentrations to include only points after infusion end
+            const filteredIndices = times.map((t, i) => t > infusionEnd ? i : -1).filter(i => i !== -1);
+            if (filteredIndices.length < 3) {
+                return { lambda_z: NaN, r2: NaN, r2_adjusted: NaN };
+            }
+            const filteredTimes = filteredIndices.map(i => times[i]);
+            const filteredConcentrations = filteredIndices.map(i => concentrations[i]);
+
+            for (let i = 2; i < filteredTimes.length; i++) {
+                const subsetTimes = filteredTimes.slice(i);
+                const subsetConcentrations = filteredConcentrations.slice(i).map(c => Math.log(c));
+
+                const sumX = subsetTimes.reduce((a, b) => a + b, 0);
+                const sumY = subsetConcentrations.reduce((a, b) => a + b, 0);
+                const sumXY = subsetTimes.reduce((acc, val, j) => acc + val * subsetConcentrations[j], 0);
+                const sumX2 = subsetTimes.reduce((acc, val) => acc + val * val, 0);
+
+                const slope = (subsetTimes.length * sumXY - sumX * sumY) / (subsetTimes.length * sumX2 - sumX * sumX);
+                const intercept = (sumY - slope * sumX) / subsetTimes.length;
+
+                const ssTotal = subsetConcentrations.map(y => (y - sumY / subsetTimes.length) ** 2).reduce((a, b) => a + b, 0);
+                const ssRes = subsetConcentrations.map((y, j) => (y - (slope * subsetTimes[j] + intercept)) ** 2).reduce((a, b) => a + b, 0);
+
+                const r2 = 1 - (ssRes / ssTotal);
+                const adjR2 = 1 - ((1 - r2) * (subsetTimes.length - 1) / (subsetTimes.length - 2));
+
+                if (adjR2 > bestAdjustedR2) {
+                    bestAdjustedR2 = adjR2;
+                    bestLambda = -slope;
+                }
+            }
+
+            return { lambda_z: bestLambda, r2: bestAdjustedR2, r2_adjusted: bestAdjustedR2 };
+        }
+
+        // Estimate Lambda Z using the Last Three Points Method
+        function estimateLambdaZLastThree(times, concentrations) {
+            const n = times.length;
+            if (n < 3) {
+                return { lambda_z: NaN, r2: NaN, r2_adjusted: NaN };
+            }
+
+            const subsetTimes = times.slice(-3);
+            const subsetConcentrations = concentrations.slice(-3).map(c => Math.log(c));
+            const sumX = subsetTimes.reduce((a, b) => a + b, 0);
+            const sumY = subsetConcentrations.reduce((a, b) => a + b, 0);
+            const sumXY = subsetTimes.reduce((acc, val, i) => acc + val * subsetConcentrations[i], 0);
+            const sumX2 = subsetTimes.reduce((acc, val) => acc + val * val, 0);
+
+            const slope = (subsetTimes.length * sumXY - sumX * sumY) / (subsetTimes.length * sumX2 - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / subsetTimes.length;
+
+            const ssTotal = subsetConcentrations.map(y => (y - sumY / subsetTimes.length) ** 2).reduce((a, b) => a + b, 0);
+            const ssRes = subsetConcentrations.map((y, i) => (y - (slope * subsetTimes[i] + intercept)) ** 2).reduce((a, b) => a + b, 0);
+
+            const r2 = 1 - (ssRes / ssTotal);
+            const adjR2 = 1 - ((1 - r2) * (subsetTimes.length - 1) / (subsetTimes.length - 2));
+
+            return { lambda_z: -slope, r2, r2_adjusted: adjR2 };
+        }
+
+        function formatNumber(value) {
+    const strValue = value.toString();
+    if (strValue.includes('.')) {
+        const decimalPlaces = strValue.split('.')[1].length;
+        return value.toFixed(decimalPlaces);
+    } else {
+        return value.toFixed(0);
+    }
+}
+       
+        function displayResultsInfusion(results) {
+            let resultHtml = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Cmax</th>
+                            <th>Tmax</th>
+                            <th>AUC0-t</th>
+                            <th>AUC0-inf</th>
+                            <th>AUC%Extrap</th>
+                            <th>Lambda Z</th>
+                            <th>t1/2</th>
+                            <th>CL</th>
+                            <th>V</th>
+                            <th>R²</th>
+                            <th>R² Adjusted</th>
+                            <th>Lambda Z Method</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            results.forEach(result => {
+                resultHtml += `
+                    <tr>
+                        <td>${result.subject}</td>
+                        <td>${formatNumber(result.cmax)}</td>
+                        <td>${formatNumber(result.tmax)}</td>
+                        <td>${result.auc0_t.toFixed(2)}</td>
+                        <td>${result.auc0_inf.toFixed(2)}</td>
+                        <td>${result.auc_extrap_pct.toFixed(2)}</td>
+                        <td>${result.lambda_z.toFixed(4)}</td>
+                        <td>${result.t_half.toFixed(2)}</td>
+                        <td>${result.cl.toFixed(2)}</td>
+                        <td>${result.v.toFixed(2)}</td>
+                        <td>${result.r2.toFixed(4)}</td>
+                        <td>${result.r2_adjusted.toFixed(4)}</td>
+                        <td>${result.lambdaMethod}</td>
+                    </tr>
+                `;
+            });
+
+            resultHtml += `</tbody></table>`;
+
+            document.getElementById("result-table-infusion").innerHTML = resultHtml;
+        }
+
+        function downloadExcelInfusion() {
+            const table = document.querySelector("table");
+            const headers = Array.from(table.querySelectorAll("th")).map(header => header.innerText);
+            const rows = Array.from(table.querySelectorAll("tbody tr")).map(row => {
+                return Array.from(row.querySelectorAll("td")).map(cell => cell.innerText);
+            });
+
+            const worksheetData = [headers, ...rows];
+            
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+            XLSX.utils.book_append_sheet(wb, ws, "IV Infusion PK Parameters");
+
+            XLSX.writeFile(wb, "IV_Infusion_PK_Parameters.xlsx");
+        }       
+    </script>
+</body>
+</html>
