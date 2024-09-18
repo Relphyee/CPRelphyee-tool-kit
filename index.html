@@ -7,37 +7,44 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      background-image: url('backgroundimage.webp'); 
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      background-color: rgba(255, 255, 255, 0.315); 
+      color: #ffffff;
       text-align: center;
-      padding: 200px;
     }
 
     h2 {
-      color: #2c3e50;
+      color: #061a8a;
       font-size: 40px;
-      margin-bottom: 40px;
+      margin-top: 80px;
+      text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
     }
 
     .module-button {
       display: inline-block;
-      width: 500px;
-      height: 250px;
+      width: 300px;
+      height: 100px;
       margin: 20px;
       padding: 20px;
-      color: rgb(21, 23, 131);
-      font-size: 18px;
+      color: #ffffff;
+      background-color: rgba(44, 62, 80, 0.9);
+      font-size: 20px;
       font-weight: bold;
-      border-radius: 30px;
-      background-size: cover;
-      background-position: center;
+      border-radius: 15px;
       cursor: pointer;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
     .module-button:hover {
       transform: scale(1.05);
-      box-shadow: 0px 8px 15px rgba(105, 16, 16, 0.2);
+      box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.2);
     }
+
     .logo {
       position: absolute;
       top: 20px;
@@ -45,15 +52,34 @@
       width: 100px;
       height: auto;
     }
+
     .info {
       position: absolute;
       top: 20px;
       left: 130px;
-      font-size: 18px;
+      font-size: 16px;
       text-align: left;
       line-height: 1.5;
+      color: #f0f0f0;
+      text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.6);
     }
-   </style>
+
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+      .module-button {
+        width: 100%;
+        height: auto;
+        font-size: 18px;
+      }
+      .logo {
+        width: 80px;
+      }
+      .info {
+        font-size: 14px;
+      }
+    }
+  </style>
+  
 </head>
 <body>
   <img src="CPRelphyee.jpg" alt="Logo" class="logo">
@@ -68,11 +94,11 @@
 
   <script>
     function openPKModelPage() {
-      window.open("compartmentmodelSG.html", "_blank"); // 打开PK Model计算页面
+      window.open("compartmentmodelSG.html", "_blank");
     }
 
     function openNonPKModelPage() {
-      window.open("NCAparameterestimate.html", "_blank"); // 打开非PK Model计算页面
+      window.open("NCA PK Parameter Estimate Final.html", "_blank"); 
     }
   </script>
 </body>
