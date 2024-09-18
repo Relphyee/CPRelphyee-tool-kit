@@ -1,19 +1,19 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PK Simulation and Parameter Estimate</title>
+  <title>PK Simulation and Parameters Estimate</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background-image: url('backgroundimage.webp'); 
+      background-image: url('backgroundimage.webp'); /* 替换为你的背景图片路径 */
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
-      background-color: rgba(255, 255, 255, 0.315); 
+      background-color: rgba(255, 255, 255, 0.315); /* 增加透明效果以突出内容 */
       color: #ffffff;
       text-align: center;
     }
@@ -79,18 +79,18 @@
       }
     }
   </style>
-  
 </head>
 <body>
   <img src="CPRelphyee.jpg" alt="Logo" class="logo">
   <div class="info">
-    <p><strong>微信公众号：</strong>CP Relphyee</p>
+    <p><strong>公众号：</strong>CP Relphyee</p>
     <p><strong>联系方式：</strong>QQ 1003062817</p>
   </div>
-  
+
   <h2>Choose the module you need</h2>
-  <button onclick="openPKModelPage()">PK Compartment Model Simulation and Graph</button>
-  <button onclick="openNonPKModelPage()">PK Non-Compartment Model Parameter Estimation</button>
+
+  <button class="module-button" onclick="openPKModelPage()">PK Compartment Model Simulation</button>
+  <button class="module-button" onclick="openNonPKModelPage()">Non-Compartment Model Parameters</button>
 
   <script>
     function openPKModelPage() {
@@ -98,7 +98,7 @@
     }
 
     function openNonPKModelPage() {
-      window.open("NCA PK Parameter Estimate Final.html", "_blank"); 
+      window.open("NCA PK Parameter Estimate Final.html", "_blank");
     }
   </script>
 </body>
